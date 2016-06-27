@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <style type="text/css">
+            body {
+                background:black;
+            }
+            #timer {
+                font-size:70vh;
+            }
+            .normal {
+                color:white;
+            }
+            .warning {
+                color:yellow;
+            }
+            .danger {
+                color:red;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="timer" class="normal">00:00</div>
+        <button id="control" value="start">Start</button>
+        <script type="text/javascript">
+            var timer = document.getElementById("timer");
+            var control = document.getElementById("control");
+            if ("WebSocket" in window) {
+                var ws = new WebSocket("ws://" + window.location.host + "/ws");
+                ws.onopen = function() {
+                    console.debug("Connection opened");
+                };
+                ws.onmessage = function (evt) { 
+                    var time = evt.data;
+                    var className;
+                    if (time.startsWith('00')) {
+                        className = "warning";
+                    }
+                    else if (time.startsWith('-')) {
+                        time = time.substr(1);
+                        className = "danger";
+                    }
+                    else {
+                        className = "normal";
+                    }
+                    timer.innerHTML = time;
+                    timer.className = className;
+                };
+                ws.onclose = function() { 
+                    console.debug("Connection closed");
+                };
+                control.onclick = function (evt) {
+                    switch (evt.target.value) {
+                        case 'start':
+                            console.debug('Sending "start" command.');
+                            ws.send('start');
+                            control.value = 'next';
+                            control.innerHTML = 'Next';
+                            break;
+                        case 'next':
+                            console.debug('Sending "next" command.');
+                            ws.send('next');
+                            control.value = 'stop';
+                            control.innerHTML = 'Stop';
+                            break;
+                        default:
+                            console.debug('Sending "stop" command.');
+                            ws.send('stop');
+                            control.value = 'start';
+                            control.innerHTML = 'Start';
+                            break;
+                    }
+                }
+            } else {
+                console.debug("WebSocket NOT supported by your Browser!");
+            }
+        </script>
+    </body>
+</html>
